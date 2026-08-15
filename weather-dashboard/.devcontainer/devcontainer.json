@@ -1,0 +1,8 @@
+{
+  "name": "Weather Codespace",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "forwardPorts": [5173],
+  "workspaceFolder": "/workspaces/Etherealmarket/weather-dashboard"
+}
