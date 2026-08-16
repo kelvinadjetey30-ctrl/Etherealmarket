@@ -1,12 +1,28 @@
 import type { Product } from '@/types';
-import { CATALOG_PART1 } from './catalog-part1';
-import { CATALOG_PART2 } from './catalog-part2';
-import { CATALOG_PART3 } from './catalog-part3';
-import { CATALOG_PART4 } from './catalog-part4';
-import { CATALOG_PART5 } from './catalog-part5';
-import { CATALOG_PART6 } from './catalog-part6';
+import { S1 } from './raw1';
+import { S2 } from './raw2';
+import { S3 } from './raw3';
+import { S4 } from './raw4';
+import { S5 } from './raw5';
 
-export const CATALOG: Product[] = [...CATALOG_PART1, ...CATALOG_PART2, ...CATALOG_PART3, ...CATALOG_PART4, ...CATALOG_PART5, ...CATALOG_PART6];
+const RAW = [S1, S2, S3, S4, S5].join('\n');
+
+export const CATALOG: Product[] = RAW.split('\n').filter(Boolean).map((line, i) => {
+  const [bin, country, brand, card_type, card_level, issuer, price] = line.split('|');
+  return {
+    id: `prod_${String(i + 1).padStart(4, '0')}`,
+    bin,
+    country,
+    brand,
+    card_type,
+    card_level,
+    issuer,
+    price: Number(price),
+    status: 'active' as const,
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+  };
+});
 
 export const FILTER_OPTIONS = {
   brands: ["MASTERCARD", "VISA"],
