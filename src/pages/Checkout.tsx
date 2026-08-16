@@ -10,6 +10,7 @@ import { formatPrice } from '@/lib/utils';
 import { CRYPTO_OPTIONS, getWalletAddress, usdToCrypto, type CryptoOption } from '@/lib/crypto';
 import { QRCodeSVG } from 'qrcode.react';
 import { Copy, Check } from 'lucide-react';
+import { CryptoIcon } from '@/components/crypto/CryptoIcon';
 
 const ORDERS_KEY = 'em_orders';
 const PURCHASED_KEY = 'em_purchased';
@@ -29,9 +30,11 @@ export default function Checkout() {
 
   if (!user) return null;
 
+  const insufficient = user.balance < total;
+
   const payWithBalance = () => {
-    if (user.balance < total) {
-      setError('Insufficient balance. Please deposit funds.');
+    if (insufficient) {
+      setError('Insufficient balance. Deposit funds to continue.');
       return;
     }
     const orderId = `ord_${Date.now()}`;
@@ -158,23 +161,53 @@ export default function Checkout() {
       <Header />
       <main className="mx-auto max-w-lg px-4 py-8 space-y-6">
         <h1 className="text-xl font-semibold">{method === 'crypto' ? 'Pay with Crypto' : 'Checkout'}</h1>
+
         <Card>
           <p className="text-sm text-muted mb-2">{items.length} item(s)</p>
-          <p className="text-2xl font-semibold text-accent-light">{formatPrice(total)}</p>
+          <p className="text-2xl font-semibold text-accent">{formatPrice(total)}</p>
         </Card>
+
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => { setMethod('balance'); setCryptoStep(1); setSelected(null); }}
-            className={`rounded-lg border px-3 py-3 text-sm font-medium ${method === 'balance' ? 'border-accent bg-accent/15 text-accent-light' : 'border-border bg-surface text-muted'}`}>
-            Account Balance<span className="block text-xs mt-0.5 opacity-80">{formatPrice(user.balance)}</span>
+          <button
+            type="button"
+            onClick={() => { setMethod('balance'); setCryptoStep(1); setSelected(null); setError(''); }}
+            className={`rounded-lg border px-3 py-3 text-sm font-medium ${
+              method === 'balance' ? 'border-accent bg-blue-50 text-accent' : 'border-border bg-white text-muted'
+            }`}
+          >
+            Account Balance
+            <span className="block text-xs mt-0.5 opacity-80">{formatPrice(user.balance)}</span>
           </button>
-          <button type="button" onClick={() => setMethod('crypto')}
-            className={`rounded-lg border px-3 py-3 text-sm font-medium ${method === 'crypto' ? 'border-accent bg-accent/15 text-accent-light' : 'border-border bg-surface text-muted'}`}>
+          <button
+            type="button"
+            onClick={() => setMethod('crypto')}
+            className={`rounded-lg border px-3 py-3 text-sm font-medium ${
+              method === 'crypto' ? 'border-accent bg-blue-50 text-accent' : 'border-border bg-white text-muted'
+            }`}
+          >
             Pay with Crypto
           </button>
         </div>
-        {error && <p className="text-sm text-danger">{error}</p>}
+
+        {method === 'balance' && insufficient && (
+          <Card className="border border-amber-200 bg-amber-50 space-y-3">
+            <p className="text-sm font-medium text-amber-900">Insufficient wallet balance</p>
+            <p className="text-xs text-amber-800">
+              You need {formatPrice(total)} but only have {formatPrice(user.balance)}.
+              Deposit crypto funds to complete this purchase.
+            </p>
+            <Button className="w-full" onClick={() => navigate('/deposit')}>
+              Deposit now
+            </Button>
+          </Card>
+        )}
+
+        {error && !insufficient && <p className="text-sm text-danger">{error}</p>}
+
         {method === 'balance' ? (
-          <Button className="w-full" onClick={payWithBalance}>Pay {formatPrice(total)}</Button>
+          <Button className="w-full" onClick={payWithBalance} disabled={insufficient}>
+            Pay {formatPrice(total)}
+          </Button>
         ) : (
           <div className="space-y-4">
             {cryptoStep === 1 && (
@@ -182,22 +215,35 @@ export default function Checkout() {
                 <p className="text-sm font-medium">Step 1: Choose Crypto</p>
                 <div className="grid grid-cols-2 gap-2">
                   {CRYPTO_OPTIONS.map((c) => (
-                    <button key={c.id} type="button" onClick={() => { setSelected(c); setCryptoStep(2); }}
-                      className="rounded-lg border border-border bg-surface-2 px-3 py-3 text-left text-sm hover:border-accent/50 transition-colors">
-                      <span className="font-semibold text-accent-light">{c.symbol}</span>
-                      <span className="block text-xs text-muted mt-0.5">{c.name}</span>
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => { setSelected(c); setCryptoStep(2); }}
+                      className="rounded-lg border border-border bg-white px-3 py-3 text-left text-sm hover:border-accent/50 transition-colors flex items-center gap-2"
+                    >
+                      <CryptoIcon option={c} size={32} />
+                      <span>
+                        <span className="font-semibold text-accent block">{c.symbol}</span>
+                        <span className="text-xs text-muted">{c.name}</span>
+                      </span>
                     </button>
                   ))}
                 </div>
               </Card>
             )}
+
             {cryptoStep === 2 && selected && (
               <Card className="space-y-4">
                 <p className="text-sm font-medium">Step 2: Send to Admin Wallet</p>
                 <div className="rounded-lg bg-surface-2 p-3 space-y-1 text-sm">
                   <p><span className="text-muted">Crypto:</span> {selected.name}</p>
                   <p><span className="text-muted">Network:</span> {selected.network}</p>
-                  <p><span className="text-muted">Amount:</span> <span className="font-semibold text-accent-light">{formatPrice(total)} USD = {cryptoAmount} {selected.symbol}</span></p>
+                  <p>
+                    <span className="text-muted">Amount:</span>{' '}
+                    <span className="font-semibold text-accent">
+                      {formatPrice(total)} USD = {cryptoAmount} {selected.symbol}
+                    </span>
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted mb-1">Admin Wallet Address</p>
@@ -209,9 +255,15 @@ export default function Checkout() {
                     </Button>
                   </div>
                 </div>
-                <div className="flex justify-center"><div className="rounded-xl bg-white p-3"><QRCodeSVG value={wallet} size={160} /></div></div>
+                <div className="flex justify-center">
+                  <div className="rounded-xl bg-white p-3 border border-border">
+                    <QRCodeSVG value={wallet} size={160} />
+                  </div>
+                </div>
                 <p className="text-xs text-warning leading-relaxed">
-                  Send the exact amount above to this admin address only. Send on the correct network: {selected.network}. Wrong network = funds will be lost.
+                  Send the exact amount above to this admin address only.
+                  Send on the correct network: {selected.network}.
+                  Wrong network = funds will be lost.
                 </p>
                 <div className="flex gap-2">
                   <Button type="button" variant="ghost" className="flex-1" onClick={() => { setCryptoStep(1); setSelected(null); }}>Back</Button>
@@ -219,6 +271,7 @@ export default function Checkout() {
                 </div>
               </Card>
             )}
+
             {cryptoStep === 3 && selected && (
               <Card className="space-y-4">
                 <p className="text-sm font-medium">Step 3: Confirm You Paid</p>
