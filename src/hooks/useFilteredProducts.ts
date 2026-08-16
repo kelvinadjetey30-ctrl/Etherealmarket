@@ -5,6 +5,9 @@ import type { FilterState, Product } from '@/types';
 export function useFilteredProducts(filters: FilterState): Product[] {
   return useMemo(() => {
     const source = loadAdminCards();
+    const binQ = filters.bin?.[0]?.toLowerCase() || '';
+    const zipQ = filters.zip?.[0]?.toLowerCase() || '';
+
     return source.filter((p) => {
       if (p.status !== 'active') return false;
 
@@ -21,8 +24,8 @@ export function useFilteredProducts(filters: FilterState): Product[] {
       if (filters.cardType.length && !filters.cardType.includes(p.card_type)) return false;
       if (filters.cardLevel.length && !filters.cardLevel.includes(p.card_level)) return false;
       if (filters.issuer.length && !filters.issuer.includes(p.issuer)) return false;
-      if (filters.zip?.length && !filters.zip.includes(p.zip_code)) return false;
-      if (filters.bin?.length && !filters.bin.includes(p.bin)) return false;
+      if (binQ && !p.bin.toLowerCase().includes(binQ)) return false;
+      if (zipQ && !p.zip_code.toLowerCase().includes(zipQ)) return false;
       if (p.price < filters.priceMin || p.price > filters.priceMax) return false;
 
       return true;
