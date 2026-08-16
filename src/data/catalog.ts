@@ -42,52 +42,62 @@ const BIN_PREFIX: Record<string, string[]> = {
   DISCOVER: ['6011', '65'],
 };
 
-const ZIP_SAMPLES: Record<string, string[]> = {
-  USA: [
-    '10001', '10011', '90210', '90001', '60601', '60614', '33101', '33139',
-    '75201', '77001', '98101', '98109', '02108', '02139', '30301', '30309',
-    '85001', '85004', '19103', '19107', '94102', '94105', '80202', '80203',
-  ],
-  UK: ['10001', '20001', '30001', '40001', '50001', '60001', '70001', '80001'],
-  CANADA: [
-    'M5V 3L9', 'M5H 2N2', 'K1A 0B1', 'K1P 1A4', 'H2Y 1C6', 'H3B 4W5',
-    'V6B 1A1', 'V6C 2X8', 'T2P 1J9', 'T2P 0R3', 'R3C 0A5', 'R3B 0T1',
-  ],
-  GERMANY: [
-    '10115', '10117', '80331', '80333', '20095', '20099', '50667', '50668',
-    '60311', '60313', '70173', '70174', '01067', '01069', '40213', '40215',
-  ],
-  FRANCE: [
-    '75001', '75008', '69001', '69002', '13001', '13002', '31000', '31001',
-    '44000', '44001', '67000', '67001', '33000', '33001',
-  ],
-  ITALY: [
-    '00118', '00187', '20121', '20122', '10121', '10123', '50123', '50122',
-    '80121', '80133', '40121', '40124',
-  ],
-  SPAIN: [
-    '28001', '28013', '08001', '08002', '41001', '41004', '46001', '46002',
-    '29001', '29015', '50001', '50005',
-  ],
-  AUSTRALIA: ['2000', '2001', '3000', '3004', '4000', '4001', '5000', '5001', '6000', '6001', '7000', '7001'],
-  BELGIUM: ['1000', '1001', '2000', '2018', '9000', '9001', '4000', '4020', '3000', '3001'],
-  NETHERLANDS: ['1011', '1012', '3011', '3012', '3511', '3512', '6211', '6212', '9711', '9712'],
-  COLOMBIA: ['110111', '110221', '050001', '050010', '760001', '760010', '680001', '680002'],
-  PERU: ['15001', '15074', '04001', '04002', '20001', '20002', '07001', '07006'],
-  BAHAMAS: ['4805', '3732', '1086', '7776'],
-  MEXICO: ['01000', '01020', '06000', '06600', '44100', '44150', '64000', '64010', '22000', '22010'],
-  BRAZIL: [
-    '01001000', '01310100', '20040020', '20031170', '30130000', '30190002',
-    '80010000', '80250030', '90010150', '90020009',
-  ],
-};
-
-function seeded(i: number) {
-  let x = (i * 1103515245 + 12345) >>> 0;
-  return () => {
-    x = (x * 1103515245 + 12345) >>> 0;
-    return x / 0xffffffff;
-  };
+function makeUniqueZip(country: string, i: number, used: Set<string>): string {
+  let attempt = 0;
+  while (attempt < 100000) {
+    let zip: string;
+    const n = i * 9973 + attempt * 7919 + 17;
+    switch (country) {
+      case 'USA':
+      case 'UK':
+        zip = String(10000 + (n % 89999)).padStart(5, '0');
+        break;
+      case 'CANADA': {
+        const letters = 'ABCEGHJKLMNPRSTVXY';
+        const letters2 = 'ABCEGHJKLMNPRSTVWXYZ';
+        const a = letters[n % letters.length];
+        const b = String(n % 10);
+        const c = letters2[(n >> 3) % letters2.length];
+        const d = String((n >> 5) % 10);
+        const e = letters2[(n >> 7) % letters2.length];
+        const f = String((n >> 9) % 10);
+        zip = `${a}${b}${c} ${d}${e}${f}`;
+        break;
+      }
+      case 'GERMANY':
+      case 'FRANCE':
+      case 'ITALY':
+      case 'SPAIN':
+      case 'PERU':
+      case 'MEXICO':
+        zip = String(1000 + (n % 89999)).padStart(5, '0');
+        break;
+      case 'AUSTRALIA':
+        zip = String(200 + (n % 7800)).padStart(4, '0');
+        break;
+      case 'BELGIUM':
+      case 'NETHERLANDS':
+      case 'BAHAMAS':
+        zip = String(1000 + (n % 8999)).padStart(4, '0');
+        break;
+      case 'COLOMBIA':
+        zip = String(50000 + (n % 900000)).padStart(6, '0');
+        break;
+      case 'BRAZIL':
+        zip = String(1000000 + (n % 89999999)).padStart(8, '0');
+        break;
+      default:
+        zip = String(10000 + (n % 89999)).padStart(5, '0');
+    }
+    if (!used.has(zip)) {
+      used.add(zip);
+      return zip;
+    }
+    attempt++;
+  }
+  const fallback = `Z${i}-${attempt}`;
+  used.add(fallback);
+  return fallback;
 }
 
 function makeUniqueBin(brand: string, i: number, used: Set<string>): string {
@@ -109,12 +119,6 @@ function makeUniqueBin(brand: string, i: number, used: Set<string>): string {
   return fallback;
 }
 
-function makeZip(country: string, i: number): string {
-  const samples = ZIP_SAMPLES[country];
-  if (samples?.length) return samples[i % samples.length];
-  return String(10000 + (i * 41) % 89999).padStart(5, '0');
-}
-
 function priceFor(i: number): number {
   return 5 + (i * 3) % 21;
 }
@@ -122,6 +126,7 @@ function priceFor(i: number): number {
 function generateCatalog(count = 1300): Product[] {
   const list: Product[] = [];
   const usedBins = new Set<string>();
+  const usedZips = new Set<string>();
   const now = '2026-01-01T00:00:00.000Z';
 
   for (let i = 0; i < count; i++) {
@@ -130,10 +135,10 @@ function generateCatalog(count = 1300): Product[] {
     const level = LEVELS[i % LEVELS.length];
     const card_type = TYPES[(i * 3) % TYPES.length];
     const issuers = ISSUERS[country] || ['LOCAL BANK'];
-    const issuer = issuers[i % issuers.length];
+    const issuer = issuers[(i + Math.floor(i / COUNTRIES.length)) % issuers.length];
     const bin = makeUniqueBin(brand, i, usedBins);
+    const zip_code = makeUniqueZip(country, i, usedZips);
     const price = priceFor(i);
-    const zip_code = makeZip(country, i + Math.floor(i / 7));
     const name = `${brand} ${level} · ${bin}`;
     const category = brand;
     const description = `${brand} ${card_type} ${level} issued by ${issuer} (${country}). ZIP ${zip_code}.`;
@@ -179,10 +184,13 @@ export function loadAdminCards(): Product[] {
     if (raw) {
       const parsed = JSON.parse(raw) as Product[];
       if (Array.isArray(parsed) && parsed.length >= CATALOG.length) {
-        const seen = new Set<string>();
+        const seenBin = new Set<string>();
+        const seenZip = new Set<string>();
         const unique = parsed.filter((p) => {
-          if (!p.bin || seen.has(p.bin)) return false;
-          seen.add(p.bin);
+          if (!p.bin || seenBin.has(p.bin)) return false;
+          if (!p.zip_code || seenZip.has(p.zip_code)) return false;
+          seenBin.add(p.bin);
+          seenZip.add(p.zip_code);
           return true;
         });
         if (unique.length >= CATALOG.length * 0.9) return unique;
