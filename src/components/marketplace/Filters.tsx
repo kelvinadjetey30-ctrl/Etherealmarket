@@ -16,6 +16,8 @@ function collectOptions(products: Product[]) {
   const cardTypes = new Set<string>();
   const cardLevels = new Set<string>();
   const issuers = new Set<string>();
+  const bins = new Set<string>();
+  const zips = new Set<string>();
 
   for (const p of products) {
     if (p.country) countries.add(p.country);
@@ -23,6 +25,8 @@ function collectOptions(products: Product[]) {
     if (p.card_type) cardTypes.add(p.card_type);
     if (p.card_level) cardLevels.add(p.card_level);
     if (p.issuer) issuers.add(p.issuer);
+    if (p.bin) bins.add(p.bin);
+    if (p.zip_code) zips.add(p.zip_code);
   }
 
   return {
@@ -31,6 +35,8 @@ function collectOptions(products: Product[]) {
     cardTypes: [...cardTypes].sort(),
     cardLevels: [...cardLevels].sort(),
     issuers: [...issuers].sort(),
+    bins: [...bins].sort(),
+    zips: [...zips].sort(),
   };
 }
 
@@ -95,6 +101,7 @@ export function Filters({ filters, onChange }: Props) {
       cardLevel: [],
       issuer: [],
       zip: [],
+      bin: [],
       priceMin: 5,
       priceMax: 25,
       search: filters.search,
@@ -107,6 +114,8 @@ export function Filters({ filters, onChange }: Props) {
     filters.cardType.length ||
     filters.cardLevel.length ||
     filters.issuer.length ||
+    filters.zip.length ||
+    filters.bin.length ||
     filters.priceMin > 5 ||
     filters.priceMax < 25;
 
@@ -126,6 +135,8 @@ export function Filters({ filters, onChange }: Props) {
       <MultiSelect label="Card Type" options={options.cardTypes} selected={filters.cardType} onToggle={(v) => toggle('cardType', v)} tall />
       <MultiSelect label="Card Level" options={options.cardLevels} selected={filters.cardLevel} onToggle={(v) => toggle('cardLevel', v)} />
       <MultiSelect label="Bank / Issuer" options={options.issuers} selected={filters.issuer} onToggle={(v) => toggle('issuer', v)} tall />
+      <MultiSelect label="BIN" options={options.bins} selected={filters.bin} onToggle={(v) => toggle('bin', v)} tall />
+      <MultiSelect label="ZIP Code" options={options.zips} selected={filters.zip} onToggle={(v) => toggle('zip', v)} tall />
 
       <div>
         <p className="mb-1.5 text-xs font-medium text-muted uppercase tracking-wide">Price</p>
