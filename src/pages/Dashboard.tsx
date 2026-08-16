@@ -49,8 +49,6 @@ export default function Dashboard() {
           </button>
         </div>
 
-        <p className="text-sm text-muted">{products.length} listings · prices $5–$25</p>
-
         <div className="flex flex-col gap-6 lg:flex-row">
           <aside className={`lg:w-72 shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
             <Filters filters={filters} onChange={setFilters} resultCount={products.length} />
