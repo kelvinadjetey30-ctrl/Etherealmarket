@@ -35,7 +35,6 @@ const ISSUERS: Record<string, string[]> = {
   BRAZIL: ['ITAU', 'BRADESCO', 'BANCO DO BRASIL'],
 };
 
-/** Public BIN ranges only (first 6 digits). Synthetic — not real full card numbers. */
 const BIN_PREFIX: Record<string, string[]> = {
   VISA: ['400000', '411111', '424242', '453201', '453987', '454889', '491761'],
   MASTERCARD: ['510000', '510510', '520082', '530000', '542523', '545454', '555555'],
@@ -43,7 +42,7 @@ const BIN_PREFIX: Record<string, string[]> = {
   DISCOVER: ['601100', '601111', '601120', '650000', '650010', '651000'],
 };
 
-/** Numeric postal / ZIP codes only (digits only — no letters). */
+/** Postal / ZIP samples. Canada uses real alphanumeric format. */
 const ZIP_SAMPLES: Record<string, string[]> = {
   USA: [
     '10001', '10011', '90210', '90001', '60601', '60614', '33101', '33139',
@@ -51,7 +50,10 @@ const ZIP_SAMPLES: Record<string, string[]> = {
     '85001', '85004', '19103', '19107', '94102', '94105', '80202', '80203',
   ],
   UK: ['10001', '20001', '30001', '40001', '50001', '60001', '70001', '80001'],
-  CANADA: ['10001', '20001', '30001', '40001', '50001', '60001', '70001', '80001'],
+  CANADA: [
+    'M5V 3L9', 'M5H 2N2', 'K1A 0B1', 'K1P 1A4', 'H2Y 1C6', 'H3B 4W5',
+    'V6B 1A1', 'V6C 2X8', 'T2P 1J9', 'T2P 0R3', 'R3C 0A5', 'R3B 0T1',
+  ],
   GERMANY: [
     '10115', '10117', '80331', '80333', '20095', '20099', '50667', '50668',
     '60311', '60313', '70173', '70174', '01067', '01069', '40213', '40215',
@@ -93,7 +95,6 @@ function pick<T>(rng: () => number, arr: T[]): T {
   return arr[Math.floor(rng() * arr.length) % arr.length];
 }
 
-/** Always a valid 6-digit BIN for the brand (industry standard length). */
 function makeBin(brand: string, i: number): string {
   const prefixes = BIN_PREFIX[brand] || BIN_PREFIX.VISA;
   const base = prefixes[i % prefixes.length];
@@ -101,14 +102,12 @@ function makeBin(brand: string, i: number): string {
   return (base.slice(0, 4) + suffix).slice(0, 6);
 }
 
-/** Country-correct postal / ZIP format (digits only). */
 function makeZip(country: string, i: number): string {
   const samples = ZIP_SAMPLES[country];
   if (samples?.length) return samples[i % samples.length];
   return String(10000 + (i * 41) % 89999).padStart(5, '0');
 }
 
-/** Whole-dollar prices $5–$25 displayed as n.00 */
 function priceFor(i: number): number {
   return 5 + (i * 3) % 21;
 }
@@ -163,7 +162,6 @@ export const FILTER_OPTIONS = {
   cardLevels: [...new Set(CATALOG.map((p) => p.card_level))].sort(),
   countries: [...new Set(CATALOG.map((p) => p.country))].sort(),
   issuers: [...new Set(CATALOG.map((p) => p.issuer))].sort(),
-  zips: [...new Set(CATALOG.map((p) => p.zip_code))].sort(),
 } as const;
 
 const CARDS_KEY = 'em_admin_cards';
