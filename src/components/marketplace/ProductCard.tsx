@@ -20,13 +20,13 @@ export function ProductCard({ product }: Props) {
   };
 
   return (
-    <Card className="flex flex-col gap-3 hover:border-accent/40 transition-all duration-200">
+    <Card className="flex flex-col gap-3 border border-border bg-white shadow-sm hover:border-accent/50 hover:shadow-md transition-all duration-200">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-mono text-lg font-semibold tracking-wide text-accent-light">{product.bin}</p>
+          <p className="font-mono text-lg font-semibold tracking-wide text-accent">{product.bin}</p>
           <p className="text-xs text-muted mt-0.5">{product.country} · {product.issuer}</p>
         </div>
-        <span className="rounded-md bg-accent/15 px-2 py-0.5 text-sm font-semibold text-accent-light">
+        <span className="rounded-md bg-blue-50 px-2 py-0.5 text-sm font-semibold text-accent">
           {formatPrice(product.price)}
         </span>
       </div>
@@ -40,9 +40,13 @@ export function ProductCard({ product }: Props) {
           <span className="text-muted">Level</span>
           <p className="font-medium truncate">{product.card_level}</p>
         </div>
-        <div className="col-span-2">
+        <div>
           <span className="text-muted">Type</span>
           <p className="font-medium truncate">{product.card_type}</p>
+        </div>
+        <div>
+          <span className="text-muted">ZIP</span>
+          <p className="font-medium truncate font-mono">{product.zip_code}</p>
         </div>
       </div>
 
