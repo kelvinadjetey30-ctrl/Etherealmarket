@@ -23,6 +23,7 @@ import AdminDeposits from '@/pages/admin/AdminDeposits';
 import AdminUsers from '@/pages/admin/AdminUsers';
 import AdminAudit from '@/pages/admin/AdminAudit';
 import AdminSettings from '@/pages/admin/AdminSettings';
+import AdminTaxonomies from '@/pages/admin/AdminTaxonomies';
 
 function App() {
   return (
@@ -52,7 +53,7 @@ function App() {
               <Route path="deposits" element={<AdminDeposits />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="categories" element={<AdminProducts />} />
-              <Route path="taxonomies" element={<AdminProducts />} />
+              <Route path="taxonomies" element={<AdminTaxonomies />} />
               <Route path="audit-log" element={<AdminAudit />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>

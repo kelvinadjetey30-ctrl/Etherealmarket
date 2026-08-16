@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingBag, Users, Wallet, Settings, FileText, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Users, Wallet, Settings, FileText, ArrowLeft, Tags } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 const nav = [
@@ -8,8 +8,9 @@ const nav = [
   { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { to: '/admin/deposits', label: 'Deposits', icon: Wallet },
   { to: '/admin/users', label: 'Users', icon: Users },
-  { to: '/admin/audit-log', label: 'Audit Log', icon: FileText },
+  { to: '/admin/taxonomies', label: 'Taxonomies', icon: Tags },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
+  { to: '/admin/audit-log', label: 'Audit Log', icon: FileText },
 ];
 
 export default function AdminLayout() {
