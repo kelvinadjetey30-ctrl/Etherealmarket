@@ -101,6 +101,7 @@ export interface FilterState {
   cardLevel: string[];
   issuer: string[];
   zip: string[];
+  bin: string[];
   priceMin: number;
   priceMax: number;
   search: string;
