@@ -35,11 +35,31 @@ const ISSUERS: Record<string, string[]> = {
   BRAZIL: ['ITAU', 'BRADESCO', 'BANCO DO BRASIL'],
 };
 
+/** Public BIN ranges only (first 6 digits). Synthetic — not real full card numbers. */
 const BIN_PREFIX: Record<string, string[]> = {
-  VISA: ['4'],
-  MASTERCARD: ['51', '52', '53', '54', '55'],
-  'AMERICAN EXPRESS': ['34', '37'],
-  DISCOVER: ['6011', '65'],
+  VISA: ['400000', '411111', '424242', '453201', '453987', '454889', '491761'],
+  MASTERCARD: ['510000', '510510', '520082', '530000', '542523', '545454', '555555'],
+  'AMERICAN EXPRESS': ['340000', '341111', '370000', '371449', '378282'],
+  DISCOVER: ['601100', '601111', '601120', '650000', '650010', '651000'],
+};
+
+/** Realistic postal-code samples by country (public format only). */
+const ZIP_SAMPLES: Record<string, string[]> = {
+  USA: ['10001', '90210', '60601', '33101', '75201', '98101', '02108', '30301', '85001', '19103'],
+  UK: ['SW1A 1AA', 'EC1A 1BB', 'W1A 0AX', 'M1 1AE', 'B1 1AA', 'G1 1AA', 'EH1 1YZ', 'L1 8JQ'],
+  CANADA: ['M5V 3L9', 'K1A 0B1', 'H2Y 1C6', 'V6B 1A1', 'T2P 1J9', 'R3C 0A5'],
+  GERMANY: ['10115', '80331', '20095', '50667', '60311', '70173', '01067'],
+  FRANCE: ['75001', '69001', '13001', '31000', '44000', '67000', '33000'],
+  ITALY: ['00118', '20121', '10121', '50123', '80121', '40121'],
+  SPAIN: ['28001', '08001', '41001', '46001', '29001', '50001'],
+  AUSTRALIA: ['2000', '3000', '4000', '5000', '6000', '7000'],
+  BELGIUM: ['1000', '2000', '9000', '4000', '3000'],
+  NETHERLANDS: ['1011', '3011', '3511', '6211', '9711'],
+  COLOMBIA: ['110111', '050001', '760001', '680001'],
+  PERU: ['15001', '04001', '20001', '07001'],
+  BAHAMAS: ['N-4805', 'N-3732', 'N-1086'],
+  MEXICO: ['01000', '06000', '44100', '64000', '22000'],
+  BRAZIL: ['01001-000', '20040-020', '30130-000', '80010-000', '90010-150'],
 };
 
 function seeded(i: number) {
@@ -54,36 +74,24 @@ function pick<T>(rng: () => number, arr: T[]): T {
   return arr[Math.floor(rng() * arr.length) % arr.length];
 }
 
+/** Always a valid 6-digit BIN for the brand (industry standard length). */
 function makeBin(brand: string, i: number): string {
-  const prefixes = BIN_PREFIX[brand] || ['4'];
-  const prefix = prefixes[i % prefixes.length];
-  const need = brand === 'AMERICAN EXPRESS' ? 15 : 6;
-  let rest = '';
-  let n = i * 7919 + 100000;
-  while ((prefix + rest).length < need) {
-    rest += String(n % 10);
-    n = Math.floor(n / 7) + i;
-  }
-  return (prefix + rest).slice(0, need);
+  const prefixes = BIN_PREFIX[brand] || BIN_PREFIX.VISA;
+  const base = prefixes[i % prefixes.length];
+  const suffix = String((i * 17 + 13) % 100).padStart(2, '0');
+  return (base.slice(0, 4) + suffix).slice(0, 6);
 }
 
+/** Country-correct postal / ZIP format. */
 function makeZip(country: string, i: number): string {
-  if (country === 'USA') return String(10000 + (i * 37) % 89999).padStart(5, '0');
-  if (country === 'UK') {
-    const letter = String.fromCharCode(65 + (i % 26));
-    return `SW${(i % 20) + 1}${letter} ${(i % 9) + 1}AA`;
-  }
-  if (country === 'CANADA') {
-    const letter = String.fromCharCode(65 + (i % 26));
-    return `M${(i % 9) + 1}${letter}${(i % 9)}`;
-  }
-  if (country === 'GERMANY') return String(10000 + (i * 41) % 89999);
-  return String(1000 + (i * 13) % 8999);
+  const samples = ZIP_SAMPLES[country];
+  if (samples?.length) return samples[i % samples.length];
+  return String(10000 + (i * 41) % 89999).padStart(5, '0');
 }
 
+/** Whole-dollar prices $5–$25 displayed as n.00 */
 function priceFor(i: number): number {
-  const cents = 500 + (i * 17) % 2001;
-  return Math.round(cents) / 100;
+  return 5 + (i * 3) % 21;
 }
 
 function generateCatalog(count = 1300): Product[] {
