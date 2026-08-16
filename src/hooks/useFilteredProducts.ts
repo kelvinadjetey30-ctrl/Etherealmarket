@@ -21,6 +21,7 @@ export function useFilteredProducts(filters: FilterState): Product[] {
       if (filters.cardType.length && !filters.cardType.includes(p.card_type)) return false;
       if (filters.cardLevel.length && !filters.cardLevel.includes(p.card_level)) return false;
       if (filters.issuer.length && !filters.issuer.includes(p.issuer)) return false;
+      if (filters.zip?.length && !filters.zip.includes(p.zip_code)) return false;
       if (p.price < filters.priceMin || p.price > filters.priceMax) return false;
 
       return true;
