@@ -18,12 +18,14 @@ import Account from '@/pages/Account';
 import AdminLayout from '@/pages/admin/AdminLayout';
 import AdminOverview from '@/pages/admin/AdminOverview';
 import AdminProducts from '@/pages/admin/AdminProducts';
+import AdminCards from '@/pages/admin/AdminCards';
 import AdminOrders from '@/pages/admin/AdminOrders';
 import AdminDeposits from '@/pages/admin/AdminDeposits';
 import AdminUsers from '@/pages/admin/AdminUsers';
 import AdminAudit from '@/pages/admin/AdminAudit';
 import AdminSettings from '@/pages/admin/AdminSettings';
 import AdminTaxonomies from '@/pages/admin/AdminTaxonomies';
+import AdminWallets from '@/pages/admin/AdminWallets';
 
 function App() {
   return (
@@ -34,6 +36,7 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/admin/login" element={<Login />} />
 
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/marketplace" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -48,6 +51,7 @@ function App() {
 
             <Route path="/admin" element={<ProtectedAdminRoute><AdminLayout /></ProtectedAdminRoute>}>
               <Route index element={<AdminOverview />} />
+              <Route path="cards" element={<AdminCards />} />
               <Route path="products" element={<AdminProducts />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="deposits" element={<AdminDeposits />} />
@@ -56,6 +60,7 @@ function App() {
               <Route path="taxonomies" element={<AdminTaxonomies />} />
               <Route path="audit-log" element={<AdminAudit />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="settings/wallets" element={<AdminWallets />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
