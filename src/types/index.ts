@@ -17,6 +17,12 @@ export interface Product {
   card_level: string;
   issuer: string;
   price: number;
+  zip_code: string;
+  stock: number;
+  name: string;
+  category: string;
+  description: string;
+  image: string;
   status: 'active' | 'sold' | 'inactive';
   created_at: string;
   updated_at: string;
@@ -51,7 +57,7 @@ export interface Deposit {
   id: string;
   user_id: string;
   amount_usd: number;
-  crypto_type: 'BTC' | 'USDT-TRC20' | 'USDT-ERC20' | 'ETH';
+  crypto_type: string;
   crypto_amount: number;
   wallet_address: string;
   txid: string | null;
@@ -78,6 +84,14 @@ export interface AuditLog {
   entity_id: string;
   details: string;
   created_at: string;
+}
+
+export interface WalletEntry {
+  id: string;
+  coin: string;
+  network: string;
+  address: string;
+  icon: string;
 }
 
 export interface FilterState {
