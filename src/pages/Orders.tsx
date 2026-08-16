@@ -13,7 +13,7 @@ export default function Orders() {
     <div className="min-h-screen bg-bg">
       <Header />
       <main className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="mb-6 text-xl font-semibold">Shop Logs</h1>
+        <h1 className="mb-6 text-xl font-semibold">Orders</h1>
         {orders.length === 0 ? (
           <Card className="py-12 text-center text-muted">No orders yet</Card>
         ) : (
