@@ -36,10 +36,10 @@ const ISSUERS: Record<string, string[]> = {
 };
 
 const BIN_PREFIX: Record<string, string[]> = {
-  VISA: ['400000', '411111', '424242', '453201', '453987', '454889', '491761'],
-  MASTERCARD: ['510000', '510510', '520082', '530000', '542523', '545454', '555555'],
-  'AMERICAN EXPRESS': ['340000', '341111', '370000', '371449', '378282'],
-  DISCOVER: ['601100', '601111', '601120', '650000', '650010', '651000'],
+  VISA: ['4'],
+  MASTERCARD: ['51', '52', '53', '54', '55'],
+  'AMERICAN EXPRESS': ['34', '37'],
+  DISCOVER: ['6011', '65'],
 };
 
 const ZIP_SAMPLES: Record<string, string[]> = {
@@ -90,15 +90,23 @@ function seeded(i: number) {
   };
 }
 
-function pick<T>(rng: () => number, arr: T[]): T {
-  return arr[Math.floor(rng() * arr.length) % arr.length];
-}
-
-function makeBin(brand: string, i: number): string {
+function makeUniqueBin(brand: string, i: number, used: Set<string>): string {
   const prefixes = BIN_PREFIX[brand] || BIN_PREFIX.VISA;
-  const base = prefixes[i % prefixes.length];
-  const suffix = String((i * 17 + 13) % 100).padStart(2, '0');
-  return (base.slice(0, 4) + suffix).slice(0, 6);
+  let attempt = 0;
+  while (attempt < 50000) {
+    const prefix = prefixes[(i + attempt) % prefixes.length];
+    const need = 6 - prefix.length;
+    const body = String((i * 7919 + attempt * 104729 + 13) % Math.pow(10, need)).padStart(need, '0');
+    const bin = (prefix + body).slice(0, 6);
+    if (!used.has(bin) && bin.length === 6) {
+      used.add(bin);
+      return bin;
+    }
+    attempt++;
+  }
+  const fallback = String(100000 + (i % 900000)).padStart(6, '0');
+  used.add(fallback);
+  return fallback;
 }
 
 function makeZip(country: string, i: number): string {
@@ -113,19 +121,19 @@ function priceFor(i: number): number {
 
 function generateCatalog(count = 1300): Product[] {
   const list: Product[] = [];
+  const usedBins = new Set<string>();
   const now = '2026-01-01T00:00:00.000Z';
 
   for (let i = 0; i < count; i++) {
-    const rng = seeded(i + 1);
     const country = COUNTRIES[i % COUNTRIES.length];
     const brand = BRANDS[i % BRANDS.length];
-    const level = pick(rng, LEVELS);
-    const card_type = pick(rng, TYPES);
+    const level = LEVELS[i % LEVELS.length];
+    const card_type = TYPES[(i * 3) % TYPES.length];
     const issuers = ISSUERS[country] || ['LOCAL BANK'];
     const issuer = issuers[i % issuers.length];
-    const bin = makeBin(brand, i);
+    const bin = makeUniqueBin(brand, i, usedBins);
     const price = priceFor(i);
-    const zip_code = makeZip(country, i);
+    const zip_code = makeZip(country, i + Math.floor(i / 7));
     const name = `${brand} ${level} · ${bin}`;
     const category = brand;
     const description = `${brand} ${card_type} ${level} issued by ${issuer} (${country}). ZIP ${zip_code}.`;
@@ -170,7 +178,15 @@ export function loadAdminCards(): Product[] {
     const raw = localStorage.getItem(CARDS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Product[];
-      if (Array.isArray(parsed) && parsed.length) return parsed;
+      if (Array.isArray(parsed) && parsed.length >= CATALOG.length) {
+        const seen = new Set<string>();
+        const unique = parsed.filter((p) => {
+          if (!p.bin || seen.has(p.bin)) return false;
+          seen.add(p.bin);
+          return true;
+        });
+        if (unique.length >= CATALOG.length * 0.9) return unique;
+      }
     }
   } catch { /* ignore */ }
   return CATALOG;
