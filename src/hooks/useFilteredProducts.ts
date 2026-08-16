@@ -1,15 +1,16 @@
 import { useMemo } from 'react';
-import { CATALOG } from '@/data/catalog';
+import { loadAdminCards } from '@/data/catalog';
 import type { FilterState, Product } from '@/types';
 
 export function useFilteredProducts(filters: FilterState): Product[] {
   return useMemo(() => {
-    return CATALOG.filter((p) => {
+    const source = loadAdminCards();
+    return source.filter((p) => {
       if (p.status !== 'active') return false;
 
       if (filters.search) {
         const q = filters.search.toLowerCase();
-        const hay = [p.bin, p.country, p.brand, p.card_type, p.card_level, p.issuer]
+        const hay = [p.bin, p.country, p.brand, p.card_type, p.card_level, p.issuer, p.zip_code, p.name]
           .join(' ')
           .toLowerCase();
         if (!hay.includes(q)) return false;
