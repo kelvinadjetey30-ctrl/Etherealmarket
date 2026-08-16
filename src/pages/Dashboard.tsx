@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { DashboardShortcuts } from '@/components/layout/DashboardShortcuts';
@@ -20,10 +20,26 @@ const defaultFilters: FilterState = {
   search: '',
 };
 
+const PAGE_SIZE = 36;
+
 export default function Dashboard() {
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(0);
   const products = useFilteredProducts(filters);
+
+  const filterKey = JSON.stringify(filters);
+  const [prevKey, setPrevKey] = useState(filterKey);
+  if (filterKey !== prevKey) {
+    setPrevKey(filterKey);
+    if (page !== 0) setPage(0);
+  }
+
+  const pageCount = Math.max(1, Math.ceil(products.length / PAGE_SIZE));
+  const visible = useMemo(
+    () => products.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [products, page],
+  );
 
   return (
     <div className="min-h-screen bg-bg">
@@ -36,7 +52,7 @@ export default function Dashboard() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <input
               type="search"
-              placeholder="Search BIN, ZIP, country, brand, type, level, issuer…"
+              placeholder="Search country, brand, type, level, issuer…"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               className="w-full rounded-lg border border-border bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
@@ -55,17 +71,42 @@ export default function Dashboard() {
             <Filters filters={filters} onChange={setFilters} resultCount={products.length} />
           </aside>
 
-          <div className="flex-1">
+          <div className="flex-1 space-y-4">
             {products.length === 0 ? (
               <div className="rounded-xl border border-border bg-white p-12 text-center text-muted shadow-sm">
                 No products match your filters
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {products.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {visible.map((p) => (
+                    <ProductCard key={p.id} product={p} />
+                  ))}
+                </div>
+                {pageCount > 1 && (
+                  <div className="flex items-center justify-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      disabled={page === 0}
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium disabled:opacity-40 hover:bg-surface-2"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-muted">
+                      {page + 1} / {pageCount}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={page >= pageCount - 1}
+                      onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                      className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium disabled:opacity-40 hover:bg-surface-2"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
