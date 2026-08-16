@@ -1,0 +1,3 @@
+import type { Product } from '@/types';
+
+export const CATALOG_PART6: Product[] = [{"id":"prod_0211","bin":"540999","country":"ITALY","brand":"MASTERCARD","card_type":"DEBIT STANDARD","card_level":"STANDARD","issuer":"UNICREDIT","price":15.0,"status":"active","created_at":"2026-01-01T00:00:00.000Z","updated_at":"2026-01-01T00:00:00.000Z"},{"id":"prod_0212","bin":"541000","country":"ITALY","brand":"MASTERCARD","card_type":"DEBIT PREPAID MASTERCARD GIFT CARD","card_level":"PREPAID","issuer":"INTESA SANPAOLO","price":9.0,"status":"active","created_at":"2026-01-01T00:00:00.000Z","updated_at":"2026-01-01T00:00:00.000Z"}];
