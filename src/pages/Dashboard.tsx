@@ -14,6 +14,7 @@ const defaultFilters: FilterState = {
   cardLevel: [],
   issuer: [],
   zip: [],
+  bin: [],
   priceMin: 5,
   priceMax: 25,
   search: '',
