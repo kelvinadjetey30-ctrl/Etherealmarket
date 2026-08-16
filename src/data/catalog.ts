@@ -42,25 +42,39 @@ const BIN_PREFIX: Record<string, string[]> = {
   DISCOVER: ['6011', '65'],
 };
 
+/** Country-correct postal formats; every ZIP is unique across the catalog. */
 function makeUniqueZip(country: string, i: number, used: Set<string>): string {
   let attempt = 0;
   while (attempt < 100000) {
+    const n = (i * 9973 + attempt * 7919 + 17) >>> 0;
     let zip: string;
-    const n = i * 9973 + attempt * 7919 + 17;
+
     switch (country) {
-      case 'USA':
-      case 'UK':
+      case 'USA': {
         zip = String(10000 + (n % 89999)).padStart(5, '0');
         break;
+      }
+      case 'UK': {
+        const areas = ['SW', 'SE', 'NW', 'NE', 'EC', 'WC', 'W', 'E', 'N', 'S', 'B', 'M', 'G', 'L', 'EH', 'CF', 'BS', 'LS', 'NG', 'LE'];
+        const area = areas[n % areas.length];
+        const district = String((n >> 4) % 20 || 1);
+        const sector = String((n >> 8) % 9 || 1);
+        const unitLetters = 'ABDEFGHJLNPQRSTUWXYZ';
+        const u1 = unitLetters[(n >> 12) % unitLetters.length];
+        const u2 = unitLetters[(n >> 16) % unitLetters.length];
+        const sub = ((n >> 20) % 3 === 0) ? unitLetters[(n >> 22) % 8] : '';
+        zip = `${area}${district}${sub} ${sector}${u1}${u2}`;
+        break;
+      }
       case 'CANADA': {
-        const letters = 'ABCEGHJKLMNPRSTVXY';
-        const letters2 = 'ABCEGHJKLMNPRSTVWXYZ';
-        const a = letters[n % letters.length];
-        const b = String(n % 10);
-        const c = letters2[(n >> 3) % letters2.length];
-        const d = String((n >> 5) % 10);
-        const e = letters2[(n >> 7) % letters2.length];
-        const f = String((n >> 9) % 10);
+        const L1 = 'ABCEGHJKLMNPRSTVXY';
+        const L2 = 'ABCEGHJKLMNPRSTVWXYZ';
+        const a = L1[n % L1.length];
+        const b = String((n >> 4) % 10);
+        const c = L2[(n >> 8) % L2.length];
+        const d = String((n >> 12) % 10);
+        const e = L2[(n >> 16) % L2.length];
+        const f = String((n >> 20) % 10);
         zip = `${a}${b}${c} ${d}${e}${f}`;
         break;
       }
@@ -69,33 +83,51 @@ function makeUniqueZip(country: string, i: number, used: Set<string>): string {
       case 'ITALY':
       case 'SPAIN':
       case 'PERU':
-      case 'MEXICO':
-        zip = String(1000 + (n % 89999)).padStart(5, '0');
+      case 'MEXICO': {
+        zip = String(1000 + (n % 98999)).padStart(5, '0');
         break;
-      case 'AUSTRALIA':
-        zip = String(200 + (n % 7800)).padStart(4, '0');
+      }
+      case 'AUSTRALIA': {
+        zip = String(200 + (n % 9800)).padStart(4, '0');
         break;
-      case 'BELGIUM':
-      case 'NETHERLANDS':
-      case 'BAHAMAS':
-        zip = String(1000 + (n % 8999)).padStart(4, '0');
+      }
+      case 'BELGIUM': {
+        zip = String(1000 + (n % 9000)).padStart(4, '0');
         break;
-      case 'COLOMBIA':
-        zip = String(50000 + (n % 900000)).padStart(6, '0');
+      }
+      case 'NETHERLANDS': {
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const num = String(1000 + (n % 9000)).padStart(4, '0');
+        const l1 = letters[(n >> 8) % 26];
+        const l2 = letters[(n >> 16) % 26];
+        zip = `${num} ${l1}${l2}`;
         break;
-      case 'BRAZIL':
-        zip = String(1000000 + (n % 89999999)).padStart(8, '0');
+      }
+      case 'COLOMBIA': {
+        zip = String(100000 + (n % 900000)).padStart(6, '0');
         break;
-      default:
+      }
+      case 'BAHAMAS': {
+        zip = `N-${String(1000 + (n % 9000)).padStart(4, '0')}`;
+        break;
+      }
+      case 'BRAZIL': {
+        const body = String(10000000 + (n % 89999999)).padStart(8, '0');
+        zip = `${body.slice(0, 5)}-${body.slice(5)}`;
+        break;
+      }
+      default: {
         zip = String(10000 + (n % 89999)).padStart(5, '0');
+      }
     }
+
     if (!used.has(zip)) {
       used.add(zip);
       return zip;
     }
     attempt++;
   }
-  const fallback = `Z${i}-${attempt}`;
+  const fallback = `${country}-${i}`;
   used.add(fallback);
   return fallback;
 }
