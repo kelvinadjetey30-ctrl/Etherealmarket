@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { CATALOG, loadAdminCards } from '@/data/catalog';
 import type { FilterState, Product } from '@/types';
-import { X } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { countryFlag } from '@/lib/flags';
 
 interface Props {
   filters: FilterState;
@@ -16,8 +17,6 @@ function collectOptions(products: Product[]) {
   const cardTypes = new Set<string>();
   const cardLevels = new Set<string>();
   const issuers = new Set<string>();
-  const bins = new Set<string>();
-  const zips = new Set<string>();
 
   for (const p of products) {
     if (p.country) countries.add(p.country);
@@ -25,8 +24,6 @@ function collectOptions(products: Product[]) {
     if (p.card_type) cardTypes.add(p.card_type);
     if (p.card_level) cardLevels.add(p.card_level);
     if (p.issuer) issuers.add(p.issuer);
-    if (p.bin) bins.add(p.bin);
-    if (p.zip_code) zips.add(p.zip_code);
   }
 
   return {
@@ -35,8 +32,6 @@ function collectOptions(products: Product[]) {
     cardTypes: [...cardTypes].sort(),
     cardLevels: [...cardLevels].sort(),
     issuers: [...issuers].sort(),
-    bins: [...bins].sort(),
-    zips: [...zips].sort(),
   };
 }
 
@@ -46,12 +41,14 @@ function MultiSelect({
   selected,
   onToggle,
   tall,
+  showFlags,
 }: {
   label: string;
   options: string[];
   selected: string[];
   onToggle: (v: string) => void;
   tall?: boolean;
+  showFlags?: boolean;
 }) {
   return (
     <div>
@@ -59,7 +56,7 @@ function MultiSelect({
         {label}
         <span className="ml-1 normal-case text-muted/70">({options.length})</span>
       </p>
-      <div className={`flex flex-wrap gap-1.5 overflow-y-auto ${tall ? 'max-h-52' : 'max-h-40'}`}>
+      <div className={`flex flex-wrap gap-1.5 overflow-y-auto ${tall ? 'max-h-48' : 'max-h-36'}`}>
         {options.map((opt) => {
           const active = selected.includes(opt);
           return (
@@ -71,7 +68,14 @@ function MultiSelect({
                 active ? 'bg-blue-50 border-accent text-accent' : 'bg-white border-border text-muted hover:text-text'
               }`}
             >
-              {opt}
+              {showFlags ? (
+                <span className="inline-flex items-center gap-1">
+                  <span>{countryFlag(opt)}</span>
+                  {opt}
+                </span>
+              ) : (
+                opt
+              )}
             </button>
           );
         })}
@@ -83,7 +87,7 @@ function MultiSelect({
 export function Filters({ filters, onChange }: Props) {
   const options = useMemo(() => {
     const admin = loadAdminCards();
-    const merged = admin.length >= CATALOG.length ? admin : [...CATALOG, ...admin];
+    const merged = admin.length >= CATALOG.length ? admin : CATALOG;
     return collectOptions(merged);
   }, []);
 
@@ -130,13 +134,46 @@ export function Filters({ filters, onChange }: Props) {
         )}
       </div>
 
-      <MultiSelect label="Country" options={options.countries} selected={filters.country} onToggle={(v) => toggle('country', v)} />
+      <div>
+        <p className="mb-1.5 text-xs font-medium text-muted uppercase tracking-wide">Search BIN</p>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+          <input
+            type="search"
+            inputMode="numeric"
+            placeholder="e.g. 453987"
+            value={filters.bin[0] || ''}
+            onChange={(e) => {
+              const v = e.target.value.trim();
+              onChange({ ...filters, bin: v ? [v] : [] });
+            }}
+            className="w-full rounded-lg border border-border bg-white py-2 pl-8 pr-3 text-sm font-mono focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
+          />
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-1.5 text-xs font-medium text-muted uppercase tracking-wide">Search ZIP</p>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+          <input
+            type="search"
+            placeholder="e.g. 90210"
+            value={filters.zip[0] || ''}
+            onChange={(e) => {
+              const v = e.target.value.trim();
+              onChange({ ...filters, zip: v ? [v] : [] });
+            }}
+            className="w-full rounded-lg border border-border bg-white py-2 pl-8 pr-3 text-sm font-mono focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
+          />
+        </div>
+      </div>
+
+      <MultiSelect label="Country" options={options.countries} selected={filters.country} onToggle={(v) => toggle('country', v)} showFlags />
       <MultiSelect label="Brand" options={options.brands} selected={filters.brand} onToggle={(v) => toggle('brand', v)} />
       <MultiSelect label="Card Type" options={options.cardTypes} selected={filters.cardType} onToggle={(v) => toggle('cardType', v)} tall />
       <MultiSelect label="Card Level" options={options.cardLevels} selected={filters.cardLevel} onToggle={(v) => toggle('cardLevel', v)} />
       <MultiSelect label="Bank / Issuer" options={options.issuers} selected={filters.issuer} onToggle={(v) => toggle('issuer', v)} tall />
-      <MultiSelect label="BIN" options={options.bins} selected={filters.bin} onToggle={(v) => toggle('bin', v)} tall />
-      <MultiSelect label="ZIP Code" options={options.zips} selected={filters.zip} onToggle={(v) => toggle('zip', v)} tall />
 
       <div>
         <p className="mb-1.5 text-xs font-medium text-muted uppercase tracking-wide">Price</p>
