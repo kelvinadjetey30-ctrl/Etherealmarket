@@ -1,20 +1,88 @@
 import type { Product } from '@/types';
 import { ISSUERS_ALL } from './issuers';
-import { BRANDS, LEVELS, TYPES } from './typesLevels';
 
 const COUNTRIES = [
   'USA', 'UK', 'CANADA', 'GERMANY', 'FRANCE', 'ITALY', 'SPAIN', 'AUSTRALIA',
   'BELGIUM', 'NETHERLANDS', 'COLOMBIA', 'PERU', 'BAHAMAS', 'MEXICO', 'BRAZIL',
 ] as const;
 
+/** Brand → only matching card types (no cross-network mismatch). */
+const TYPES_BY_BRAND: Record<string, readonly string[]> = {
+  VISA: [
+    'CREDIT BUSINESS', 'CREDIT CLASSIC', 'CREDIT PERSONAL', 'CREDIT SIGNATURE',
+    'CREDIT TRADITIONAL', 'CREDIT TRADITIONAL REWARDS', 'CREDIT VISA TRADITIONAL',
+    'DEBIT BUSINESS', 'DEBIT CLASSIC', 'DEBIT ELECTRON', 'DEBIT PERSONAL',
+    'DEBIT PREPAID ANONYMOUS', 'DEBIT PREPAID CLASSIC', 'DEBIT PREPAID RELOADABLE',
+    'DEBIT VISA CLASSIC', 'PREPAID VISA CLASSIC',
+    'VISA - CREDIT - BUSINESS', 'VISA - CREDIT - CLASSIC', 'VISA - CREDIT - REWARDS',
+    'VISA - CREDIT - SIGNATURE', 'VISA - DEBIT - BUSINESS', 'VISA - DEBIT - CLASSIC',
+    'VISA - DEBIT - ELECTRON',
+  ],
+  MASTERCARD: [
+    'CREDIT MASTERCARD BUSINESSCARD CARD', 'CREDIT MASTERCARD STANDARD',
+    'CREDIT PLATINUM MASTERCARD', 'CREDIT WORLD ELITE MASTERCARD CARD',
+    'CREDIT WORLD MASTERCARD CARD', 'CREDIT WORLD MASTERCARD FOR BUSINESS',
+    'DEBIT DEBIT MASTERCARD', 'DEBIT DEBIT MASTERCARD ENHANCED',
+    'DEBIT DEBIT MASTERCARD (ENHANCED)', 'DEBIT DEBIT MASTERCARD BUSINESSCARD CARD',
+    'DEBIT GOLD', 'DEBIT PREPAID MASTERCARD CONSUMER INCENTIVE CARD',
+    'DEBIT PREPAID MASTERCARD EMPLOYEE INCENTIVE CARD',
+    'DEBIT PREPAID MASTERCARD FLEX BENEFIT CARD',
+    'DEBIT PREPAID MASTERCARD GENERAL SPEND CARD',
+    'DEBIT PREPAID MASTERCARD GIFT CARD',
+    'DEBIT PREPAID MASTERCARD GOVERNMENT CARD',
+    'DEBIT PREPAID MASTERCARD INSURANCE CARD',
+    'DEBIT PREPAID MASTERCARD PAYROLL CARD',
+    'DEBIT PREPAID MASTERCARD UNEMBOSSED',
+    'DEBIT PREPAID MASTERCARD WORKPLACE B2B SOLUTIONS',
+    'DEBIT WORLD DEBIT MASTERCARD EMBOSSED',
+    'MASTERCARD - CREDIT - BUSINESS', 'MASTERCARD - CREDIT - GOLD',
+    'MASTERCARD - CREDIT - PLATINUM', 'MASTERCARD - CREDIT - STANDARD',
+    'MASTERCARD - DEBIT -', 'MASTERCARD - DEBIT - BUSINESS',
+    'MASTERCARD - DEBIT - GOLD', 'MASTERCARD - DEBIT - STANDARD',
+  ],
+  CREDIT: [
+    'CREDIT BUSINESS', 'CREDIT CLASSIC', 'CREDIT PERSONAL', 'CREDIT SIGNATURE',
+    'CREDIT TRADITIONAL', 'CREDIT TRADITIONAL REWARDS', 'CREDIT PURCHASING',
+    'CREDIT PURCHASING WITH FLEET', 'CREDIT DEBIT BUSINESSCARD',
+  ],
+  DEBIT: [
+    'DEBIT BUSINESS', 'DEBIT CLASSIC', 'DEBIT ELECTRON', 'DEBIT GOLD',
+    'DEBIT PERSONAL', 'DEBIT PREPAID ANONYMOUS', 'DEBIT PREPAID CLASSIC',
+    'DEBIT PREPAID RELOADABLE',
+  ],
+  PREPAID: [
+    'DEBIT PREPAID ANONYMOUS', 'DEBIT PREPAID CLASSIC', 'DEBIT PREPAID RELOADABLE',
+    'PREPAID VISA CLASSIC',
+  ],
+  'N/A': [
+    'CREDIT TRADITIONAL', 'DEBIT CLASSIC', 'CREDIT PERSONAL',
+  ],
+};
+
+const BRANDS = ['VISA', 'MASTERCARD', 'CREDIT', 'DEBIT', 'PREPAID', 'N/A'] as const;
+
 const BIN_PREFIX: Record<string, string[]> = {
   VISA: ['4'],
   MASTERCARD: ['51', '52', '53', '54', '55'],
   CREDIT: ['4', '51'],
-  DEBIT: ['4', '51'],
+  DEBIT: ['4', '52'],
   PREPAID: ['4', '51', '6011'],
   'N/A': ['4'],
 };
+
+function levelFromType(cardType: string, i: number): string {
+  const t = cardType.toUpperCase();
+  if (t.includes('WORLD ELITE')) return 'WORLD ELITE';
+  if (t.includes('WORLD')) return 'WORLD MASTERCARD';
+  if (t.includes('PLATINUM')) return 'PLATINUM';
+  if (t.includes('SIGNATURE')) return 'SIGNATURE';
+  if (t.includes('GOLD')) return 'GOLD';
+  if (t.includes('BUSINESS') || t.includes('PURCHASING')) return 'BUSINESS';
+  if (t.includes('PREPAID') || t.includes('GIFT') || t.includes('PAYROLL')) return 'PREPAID';
+  if (t.includes('DEBIT') || t.includes('ELECTRON')) return i % 2 === 0 ? 'DEBIT' : 'CLASSIC';
+  if (t.includes('CREDIT')) return i % 3 === 0 ? 'CREDIT' : 'CLASSIC';
+  return 'CLASSIC';
+}
 
 function makeUniqueZip(country: string, i: number, used: Set<string>): string {
   let attempt = 0;
@@ -111,8 +179,9 @@ function generateCatalog(count = 3000): Product[] {
   for (let i = 0; i < count; i++) {
     const country = COUNTRIES[i % COUNTRIES.length];
     const brand = BRANDS[i % BRANDS.length];
-    const level = LEVELS[i % LEVELS.length];
-    const card_type = TYPES[i % TYPES.length];
+    const typePool = TYPES_BY_BRAND[brand] || TYPES_BY_BRAND.VISA;
+    const card_type = typePool[i % typePool.length];
+    const level = levelFromType(card_type, i);
     const issuer = ISSUERS_ALL[i % ISSUERS_ALL.length];
     const bin = makeUniqueBin(brand, i, usedBins);
     const zip_code = makeUniqueZip(country, i, usedZips);
@@ -148,8 +217,11 @@ export const CATALOG: Product[] = generateCatalog(3000);
 
 export const FILTER_OPTIONS = {
   brands: [...BRANDS].sort(),
-  cardTypes: [...TYPES].sort(),
-  cardLevels: [...LEVELS].sort(),
+  cardTypes: [...new Set(Object.values(TYPES_BY_BRAND).flat())].sort(),
+  cardLevels: [
+    'BUSINESS', 'CLASSIC', 'CREDIT', 'DEBIT', 'GOLD', 'PLATINUM',
+    'PREPAID', 'SIGNATURE', 'TRADITIONAL', 'WORLD ELITE', 'WORLD MASTERCARD',
+  ].sort(),
   countries: [...COUNTRIES].sort(),
   issuers: [...ISSUERS_ALL].sort(),
 } as const;
@@ -161,7 +233,7 @@ export function loadAdminCards(): Product[] {
     const raw = localStorage.getItem(CARDS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Product[];
-      if (Array.isArray(parsed) && parsed.length >= CATALOG.length * 0.5) {
+      if (Array.isArray(parsed) && parsed.length >= 1000) {
         const seenBin = new Set<string>();
         const seenZip = new Set<string>();
         const unique = parsed.filter((p) => {
