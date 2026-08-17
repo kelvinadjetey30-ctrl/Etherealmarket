@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
-import { CATALOG, loadAdminCards } from '@/data/catalog';
-import type { FilterState, Product } from '@/types';
+import type { FilterState } from '@/types';
+import { FILTER_OPTIONS } from '@/data/catalog';
 import { X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { countryFlag } from '@/lib/flags';
@@ -11,30 +10,6 @@ interface Props {
   resultCount: number;
 }
 
-function collectOptions(products: Product[]) {
-  const countries = new Set<string>();
-  const brands = new Set<string>();
-  const cardTypes = new Set<string>();
-  const cardLevels = new Set<string>();
-  const issuers = new Set<string>();
-
-  for (const p of products) {
-    if (p.country) countries.add(p.country);
-    if (p.brand) brands.add(p.brand);
-    if (p.card_type) cardTypes.add(p.card_type);
-    if (p.card_level) cardLevels.add(p.card_level);
-    if (p.issuer) issuers.add(p.issuer);
-  }
-
-  return {
-    countries: [...countries].sort(),
-    brands: [...brands].sort(),
-    cardTypes: [...cardTypes].sort(),
-    cardLevels: [...cardLevels].sort(),
-    issuers: [...issuers].sort(),
-  };
-}
-
 function MultiSelect({
   label,
   options,
@@ -42,19 +17,23 @@ function MultiSelect({
   onToggle,
   tall,
   showFlags,
+  showCount,
 }: {
   label: string;
-  options: string[];
+  options: readonly string[];
   selected: string[];
   onToggle: (v: string) => void;
   tall?: boolean;
   showFlags?: boolean;
+  showCount?: boolean;
 }) {
   return (
     <div>
       <p className="mb-1.5 text-xs font-medium text-muted uppercase tracking-wide">
         {label}
-        <span className="ml-1 normal-case text-muted/70">({options.length})</span>
+        {showCount && selected.length > 0 && (
+          <span className="ml-1 normal-case text-accent">({selected.length} selected)</span>
+        )}
       </p>
       <div className={`flex flex-wrap gap-1.5 overflow-y-auto ${tall ? 'max-h-48' : 'max-h-36'}`}>
         {options.map((opt) => {
@@ -64,8 +43,10 @@ function MultiSelect({
               key={opt}
               type="button"
               onClick={() => onToggle(opt)}
-              className={`rounded-md px-2 py-1 text-xs border transition-colors ${
-                active ? 'bg-blue-50 border-accent text-accent' : 'bg-white border-border text-muted hover:text-text'
+              className={`rounded-md px-2 py-1 text-xs border transition-colors text-left ${
+                active
+                  ? 'bg-blue-50 border-accent text-accent'
+                  : 'bg-white border-border text-muted hover:text-text'
               }`}
             >
               {showFlags ? (
@@ -85,12 +66,6 @@ function MultiSelect({
 }
 
 export function Filters({ filters, onChange }: Props) {
-  const options = useMemo(() => {
-    const admin = loadAdminCards();
-    const merged = admin.length >= CATALOG.length ? admin : CATALOG;
-    return collectOptions(merged);
-  }, []);
-
   const toggle = (key: keyof FilterState, value: string) => {
     const arr = filters[key] as string[];
     const next = arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
@@ -169,11 +144,11 @@ export function Filters({ filters, onChange }: Props) {
         </div>
       </div>
 
-      <MultiSelect label="Country" options={options.countries} selected={filters.country} onToggle={(v) => toggle('country', v)} showFlags />
-      <MultiSelect label="Brand" options={options.brands} selected={filters.brand} onToggle={(v) => toggle('brand', v)} />
-      <MultiSelect label="Card Type" options={options.cardTypes} selected={filters.cardType} onToggle={(v) => toggle('cardType', v)} tall />
-      <MultiSelect label="Card Level" options={options.cardLevels} selected={filters.cardLevel} onToggle={(v) => toggle('cardLevel', v)} />
-      <MultiSelect label="Bank / Issuer" options={options.issuers} selected={filters.issuer} onToggle={(v) => toggle('issuer', v)} tall />
+      <MultiSelect label="Country" options={FILTER_OPTIONS.countries} selected={filters.country} onToggle={(v) => toggle('country', v)} showFlags showCount={filters.country.length > 0} />
+      <MultiSelect label="Card Brand" options={FILTER_OPTIONS.brands} selected={filters.brand} onToggle={(v) => toggle('brand', v)} showCount={filters.brand.length > 0} />
+      <MultiSelect label="Card Type" options={FILTER_OPTIONS.cardTypes} selected={filters.cardType} onToggle={(v) => toggle('cardType', v)} tall showCount={filters.cardType.length > 0} />
+      <MultiSelect label="Card Level" options={FILTER_OPTIONS.cardLevels} selected={filters.cardLevel} onToggle={(v) => toggle('cardLevel', v)} showCount={filters.cardLevel.length > 0} />
+      <MultiSelect label="Bank / Issuer" options={FILTER_OPTIONS.issuers} selected={filters.issuer} onToggle={(v) => toggle('issuer', v)} tall showCount={filters.issuer.length > 0} />
 
       <div>
         <p className="mb-1.5 text-xs font-medium text-muted uppercase tracking-wide">Price</p>
