@@ -144,7 +144,9 @@ export default function Checkout() {
               {method === 'balance' ? 'Order placed' : 'Payment Submitted'}
             </p>
             <p className="text-sm text-muted mt-2">
-              {method === 'balance' ? 'Payment completed from your balance.' : 'Waiting for admin approval.'}
+              {method === 'balance'
+                ? 'Payment completed from your balance.'
+                : 'Payment submitted. Pending confirmation.'}
             </p>
             <Button className="mt-6" onClick={() => navigate('/orders')}>View orders</Button>
           </Card>
@@ -234,7 +236,7 @@ export default function Checkout() {
 
             {cryptoStep === 2 && selected && (
               <Card className="space-y-4">
-                <p className="text-sm font-medium">Step 2: Send to Admin Wallet</p>
+                <p className="text-sm font-medium">Step 2: Send Payment</p>
                 <div className="rounded-lg bg-surface-2 p-3 space-y-1 text-sm">
                   <p><span className="text-muted">Crypto:</span> {selected.name}</p>
                   <p><span className="text-muted">Network:</span> {selected.network}</p>
@@ -246,7 +248,7 @@ export default function Checkout() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">Admin Wallet Address</p>
+                  <p className="text-xs text-muted mb-1">Payment Address</p>
                   <p className="break-all rounded-lg bg-surface-2 px-3 py-2 font-mono text-xs">{wallet}</p>
                   <div className="mt-2">
                     <Button type="button" size="sm" variant="secondary" onClick={() => copyAddress(wallet)}>
@@ -261,7 +263,7 @@ export default function Checkout() {
                   </div>
                 </div>
                 <p className="text-xs text-warning leading-relaxed">
-                  Send the exact amount above to this admin address only.
+                  Send the exact amount above to this address only.
                   Send on the correct network: {selected.network}.
                   Wrong network = funds will be lost.
                 </p>
